@@ -8,7 +8,7 @@
 See: .planning/PROJECT.md (updated 2026-09-24)
 
 **Core value:** A requirements prompt produces a valid Azure architecture diagram (official ARM icons, real service types) without user correction in the golden path.  
-**Current focus:** Phase 4 — Landing Page
+**Current focus:** Phase 5 — React Flow Canvas + Diagram Rendering
 
 ---
 
@@ -19,8 +19,8 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 | 1 | Project Scaffold | Complete |
 | 2 | MCP Servers | Complete |
 | 3 | LangGraph.js Agent Graph | Complete |
-| 4 | Landing Page | In Progress |
-| 5 | React Flow Canvas + Diagram Rendering | Not Started |
+| 4 | Landing Page | Complete |
+| 5 | React Flow Canvas + Diagram Rendering | In Progress |
 | 6 | Diagram State Store | Not Started |
 | 7 | Inline Editing | Not Started |
 | 8 | Chat Panel + Agent State Visualization | Not Started |
@@ -36,7 +36,7 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 
 ## Active Work
 
-Phase 3 completed and verified (all 5 LangGraph nodes wired, Prisma checkpointer, SSE routes, 47 tests passing, build clean). Advancing to Phase 4 (Landing Page: bolt.new/lovable.dev UI, model picker, prompt hero, session canvas creation, recent canvases, example gallery).
+Phase 4 completed and verified (bolt.new dark studio landing page, model picker, settings modal, recent canvases, example gallery, 51 tests passing, 0 impeccable defects). Advancing to Phase 5 (React Flow Canvas: ARM icons, parent/child grouping, layout, layers panel, zoom/pan/minimap).
 
 ---
 
