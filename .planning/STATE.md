@@ -8,7 +8,7 @@
 See: .planning/PROJECT.md (updated 2026-09-24)
 
 **Core value:** A requirements prompt produces a valid Azure architecture diagram (official ARM icons, real service types) without user correction in the golden path.  
-**Current focus:** Phase 2 — MCP Servers
+**Current focus:** Phase 3 — LangGraph.js Agent Graph
 
 ---
 
@@ -17,8 +17,8 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Project Scaffold | Complete |
-| 2 | MCP Servers | In Progress |
-| 3 | LangGraph.js Agent Graph | Not Started |
+| 2 | MCP Servers | Complete |
+| 3 | LangGraph.js Agent Graph | In Progress |
 | 4 | Landing Page | Not Started |
 | 5 | React Flow Canvas + Diagram Rendering | Not Started |
 | 6 | Diagram State Store | Not Started |
@@ -36,7 +36,7 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 
 ## Active Work
 
-Phase 1 completed and verified (29 tests passing, next build succeeding). Advancing to Phase 2 (MCP Servers: azure-docs, azure-pricing, azure-diagram).
+Phase 2 completed and verified (all 3 MCP servers implemented, 44 tests passing, next build succeeding). Advancing to Phase 3 (LangGraph.js Agent Graph: supervisor, researcher, architect, diagram_builder, reviewer, Prisma checkpointer, SSE streaming).
 
 ---
 
