@@ -3,6 +3,7 @@
 /**
  * Main Canvas Page for Architecture Diagram Editor.
  * Renders React Flow canvas with Azure nodes, layers panel, minimap, and zoom controls.
+ * Uses Zustand store for centralized state management.
  * Spec §3 & §5.
  */
 
@@ -26,6 +27,7 @@ import { diagramJsonToReactFlow, reactFlowToDiagramJson, type AzureNodeData } fr
 import { AzureNode } from "@/components/canvas/azure-node";
 import { GroupNode } from "@/components/canvas/group-node";
 import { LayersPanel } from "@/components/canvas/layers-panel";
+import { useDiagramStore } from "@/lib/store/diagram-store";
 import type { DiagramJson } from "@/mcp/azure-diagram/validator";
 
 const nodeTypes = {
@@ -38,9 +40,12 @@ export default function CanvasPage() {
   const router = useRouter();
   const canvasId = params.id;
 
-  const [diagramJson, setDiagramJson] = useState<DiagramJson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const diagramJson = useDiagramStore((s) => s.diagramJson);
+  const setDiagramJson = useDiagramStore((s) => s.setDiagramJson);
+  const saveCheckpoint = useDiagramStore((s) => s.saveCheckpoint);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -74,7 +79,7 @@ export default function CanvasPage() {
     }
 
     void loadCanvas();
-  }, [canvasId, router, setNodes, setEdges]);
+  }, [canvasId, router, setDiagramJson, setNodes, setEdges]);
 
   const onConnect: OnConnect = useCallback(
     (connection) => {
@@ -97,10 +102,11 @@ export default function CanvasPage() {
 
       if (!res.ok) throw new Error("Failed to save canvas");
       setDiagramJson(updatedDiagram);
+      saveCheckpoint();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     }
-  }, [canvasId, diagramJson, nodes, edges]);
+  }, [canvasId, diagramJson, nodes, edges, setDiagramJson, saveCheckpoint]);
 
   if (loading) {
     return (
