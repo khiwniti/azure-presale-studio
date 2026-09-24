@@ -1,0 +1,110 @@
+// Prisma schema for Azure Presale Studio
+// Supports local development via SQLite and production via PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Session ──────────────────────────────────────────────────────────────────
+// One row per anonymous browser session (cookie-bound UUID).
+// The nimKeyEncrypted field stores the user's NIM API key encrypted with
+// AES-256-GCM; plaintext never persists to the DB.
+
+model Session {
+  id              String   @id @default(uuid())
+  createdAt       DateTime @default(now())
+  lastSeenAt      DateTime @default(now()) @updatedAt
+  // AES-256-GCM envelope: "<iv_hex>:<authTag_hex>:<ciphertext_hex>"
+  nimKeyEncrypted String?
+  defaultModel    String   @default("nvidia/llama-3.1-nemotron-70b-instruct")
+
+  canvases Canvas[]
+
+  @@map("sessions")
+}
+
+// ── Canvas ────────────────────────────────────────────────────────────────────
+// One canvas per user architecture session. diagramJson is the single source
+// of truth for all exports (spec §3).
+
+model Canvas {
+  id          String   @id @default(uuid())
+  sessionId   String
+  title       String   @default("Untitled Architecture")
+  // Versioned diagram JSON — spec §3 schema stored as stringified JSON in SQLite
+  diagramJson String   @default("{\"version\":1,\"meta\":{\"title\":\"Untitled\",\"region\":\"eastus\"},\"nodes\":[],\"edges\":[],\"groups\":[]}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  runs    Run[]
+
+  @@index([sessionId])
+  @@map("canvases")
+}
+
+// ── Run ───────────────────────────────────────────────────────────────────────
+// One row per agent graph execution. graphState is the LangGraph checkpoint;
+// timelineEvents is the ordered list of node transitions for the UI timeline.
+
+model Run {
+  id             String    @id @default(uuid())
+  canvasId       String
+  // generate | edit | cost | proposal
+  type           String    @default("generate")
+  status         String    @default("pending")
+  // Full LangGraph state snapshot (spec §2 — custom Prisma checkpointer)
+  graphState     String?
+  // JSON array: [{node, status, startedAt, completedAt, findings, citations}]
+  timelineEvents String    @default("[]")
+  error          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+
+  canvas    Canvas     @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  artifacts Artifact[]
+
+  @@index([canvasId])
+  @@index([status])
+  @@map("runs")
+}
+
+// ── Message ───────────────────────────────────────────────────────────────────
+// Chat messages for a run. role follows OpenAI convention.
+
+model Message {
+  id        String   @id @default(uuid())
+  runId     String
+  role      String   // user | assistant | system | tool
+  content   String
+  createdAt DateTime @default(now())
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, createdAt])
+  @@map("messages")
+}
+
+// ── Artifact ──────────────────────────────────────────────────────────────────
+// Generated export artifacts: SVG, PNG, Bicep, Terraform, DOCX, XLSX.
+// storageKey is a relative path under the configured artifact storage root.
+
+model Artifact {
+  id         String   @id @default(uuid())
+  runId      String
+  kind       String   // svg | png | bicep | terraform | docx | xlsx | zip
+  storageKey String
+  metadata   String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@map("artifacts")
+}
