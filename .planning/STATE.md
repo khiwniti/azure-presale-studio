@@ -8,7 +8,7 @@
 See: .planning/PROJECT.md (updated 2026-09-24)
 
 **Core value:** A requirements prompt produces a valid Azure architecture diagram (official ARM icons, real service types) without user correction in the golden path.  
-**Current focus:** Phase 1 — Project Scaffold
+**Current focus:** Phase 2 — MCP Servers
 
 ---
 
@@ -16,8 +16,8 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | Project Scaffold | Not Started |
-| 2 | MCP Servers | Not Started |
+| 1 | Project Scaffold | Complete |
+| 2 | MCP Servers | In Progress |
 | 3 | LangGraph.js Agent Graph | Not Started |
 | 4 | Landing Page | Not Started |
 | 5 | React Flow Canvas + Diagram Rendering | Not Started |
@@ -36,7 +36,7 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 
 ## Active Work
 
-None — project initialized, ready to begin Phase 1.
+Phase 1 completed and verified (29 tests passing, next build succeeding). Advancing to Phase 2 (MCP Servers: azure-docs, azure-pricing, azure-diagram).
 
 ---
 
@@ -60,3 +60,6 @@ None.
 | One mutation channel (Zustand + immer) | ✓ User edits and agent SSE patch ops share the same store; diagram state never forks |
 | SVG/PNG rendered server-side via @resvg/resvg | ✓ No headless browser dependency; deterministic, reproducible output |
 | Bicep/Terraform emitters deterministic (no LLM) | ✓ Stable, auditable IaC; same diagram JSON → byte-identical output |
+| Vercel over Railway for prod deploy | ✓ User decision: deploy to Vercel in production; complete everything locally first |
+| Local SQLite for local dev & testing | ✓ Zero-dependency, avoids PRoot SYSVIPC shmget failure; Postgres schema ready for cloud |
+| Babel fallback for ARM64 PRoot | ✓ Bypasses native SWC SIGBUS under ptrace emulation; verified clean production build |
