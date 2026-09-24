@@ -36,7 +36,7 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 
 ## Active Work
 
-Phase 2 completed and verified (all 3 MCP servers implemented, 44 tests passing, next build succeeding). Advancing to Phase 3 (LangGraph.js Agent Graph: supervisor, researcher, architect, diagram_builder, reviewer, Prisma checkpointer, SSE streaming).
+Phase 2 completed. Phase 3 (LangGraph Agent Graph) in progress: 47/47 tests passing, all 5 nodes wired and verified.
 
 ---
 
