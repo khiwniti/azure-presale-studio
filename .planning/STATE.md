@@ -8,7 +8,7 @@
 See: .planning/PROJECT.md (updated 2026-09-24)
 
 **Core value:** A requirements prompt produces a valid Azure architecture diagram (official ARM icons, real service types) without user correction in the golden path.  
-**Current focus:** Phase 14 — Error Handling + Degradation UX
+**Current focus:** Phase 15 — Testing Suite
 
 ---
 
@@ -29,15 +29,15 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 | 11 | SVG/PNG Export | Complete |
 | 12 | IaC Export | Complete |
 | 13 | Document Exports (DOCX + XLSX + Zip) | Complete |
-| 14 | Error Handling + Degradation UX | In Progress |
-| 15 | Testing Suite | Not Started |
+| 14 | Error Handling + Degradation UX | Complete |
+| 15 | Testing Suite | In Progress |
 
 ---
 
 ## Active Work
 
 Phase 6 completed and verified (Zustand + immer diagram state store with SSE patch application, undo/redo stack, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 7 (Inline Editing: node label, SKU dropdown, zone-redundancy toggle, ConfigPanel for ARM-specific fields).
-Phase 13 completed and verified (Document Exports: XLSX pricing sheet, ZIP bundle with all deliverables, 45 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 14 (Error Handling + Degradation UX: React error boundaries, degraded mode for MCP failures, retry logic, toast notifications).
+Phase 14 completed and verified (Error Handling + Degradation UX: React error boundary, degraded mode banner, toast notifications, MCP retry logic with exponential backoff, 45 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 15 (Testing Suite: comprehensive E2E, integration, and unit tests).
 ---
 
 ## Blockers
