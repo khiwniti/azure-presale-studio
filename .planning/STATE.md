@@ -8,7 +8,7 @@
 See: .planning/PROJECT.md (updated 2026-09-24)
 
 **Core value:** A requirements prompt produces a valid Azure architecture diagram (official ARM icons, real service types) without user correction in the golden path.  
-**Current focus:** Phase 5 — React Flow Canvas + Diagram Rendering
+**Current focus:** Phase 7 — Inline Editing
 
 ---
 
@@ -21,8 +21,8 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 | 3 | LangGraph.js Agent Graph | Complete |
 | 4 | Landing Page | Complete |
 | 5 | React Flow Canvas + Diagram Rendering | Complete |
-| 6 | Diagram State Store | In Progress |
-| 7 | Inline Editing | Not Started |
+| 6 | Diagram State Store | Complete |
+| 7 | Inline Editing | In Progress |
 | 8 | Chat Panel + Agent State Visualization | Not Started |
 | 9 | Editor Node | Not Started |
 | 10 | Report Wizard | Not Started |
@@ -36,7 +36,7 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 
 ## Active Work
 
-Phase 5 completed and verified (React Flow canvas with Azure nodes, groups, layers panel, minimap, zoom controls, 51 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 6 (Diagram State Store: Zustand + immer for centralized mutation, SSE patch application, undo/redo stack).
+Phase 6 completed and verified (Zustand + immer diagram state store with SSE patch application, undo/redo stack, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 7 (Inline Editing: node label, SKU dropdown, zone-redundancy toggle, ConfigPanel for ARM-specific fields).
 
 ---
 
