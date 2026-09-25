@@ -16,7 +16,7 @@ import {
 export interface AzurePriceItem {
   currencyCode: string;
   retailPrice: number;
-  unitPrice?: number;
+  unitPrice: number;
   armRegionName: string;
   location: string;
   meterId: string;
@@ -36,20 +36,28 @@ export interface AzurePriceItem {
 
 export interface AzureRetailPricesResponse {
   Items: AzurePriceItem[];
-  NextPageLink: string | null;
-  Count: number;
+  NextPageLink?: string;
+  Count?: number;
 }
 
 // Built-in baseline reference rates ($ / unit) for resilient offline operation
 const REFERENCE_PRICES: Record<string, { hourly: number; monthly: number; unit: string }> = {
-  "P1v3": { hourly: 0.125, monthly: 91.25, unit: "1 Hour" },
-  "P2v3": { hourly: 0.25, monthly: 182.50, unit: "1 Hour" },
+  "B1": { hourly: 0.0136, monthly: 9.99, unit: "1 Unit" },
+  "B2": { hourly: 0.0272, monthly: 19.98, unit: "1 Unit" },
+  "B3": { hourly: 0.0544, monthly: 39.96, unit: "1 Unit" },
+  "P1v3": { hourly: 0.101, monthly: 73.73, unit: "1 Unit" },
+  "P2v3": { hourly: 0.202, monthly: 147.46, unit: "1 Unit" },
+  "P3v3": { hourly: 0.404, monthly: 294.92, unit: "1 Unit" },
+  "Standard_D2s_v5": { hourly: 0.096, monthly: 70.08, unit: "1 Hour" },
   "Standard_D4s_v5": { hourly: 0.192, monthly: 140.16, unit: "1 Hour" },
-  "Standard_D8s_v5": { hourly: 0.384, monthly: 280.32, unit: "1 Hour" },
-  "GP_Gen5_2": { hourly: 0.285, monthly: 208.05, unit: "1 vCore Hour" },
-  "Standard_C1": { hourly: 0.055, monthly: 40.15, unit: "1 Hour" },
-  "Standard_LRS": { hourly: 0.000025, monthly: 0.018, unit: "1 GB/Month" },
-  "Standard_ZRS": { hourly: 0.000035, monthly: 0.025, unit: "1 GB/Month" },
+  "Standard_E4s_v5": { hourly: 0.252, monthly: 183.96, unit: "1 Hour" },
+  "Serverless": { hourly: 0.000, monthly: 0.00, unit: "1 RU/s" },
+  "Provisioned-400RU": { hourly: 0.03, monthly: 21.90, unit: "100 RU/s" },
+  "Premium_P1": { hourly: 0.077, monthly: 56.21, unit: "1 Unit" },
+  "Standard_LRS": { hourly: 0.018, monthly: 13.14, unit: "1 GB" },
+  "WAF_v2": { hourly: 0.306, monthly: 223.38, unit: "1 Unit" },
+  "Standard": { hourly: 0.000, monthly: 0.00, unit: "1 Unit" },
+  "PerGB2018": { hourly: 0.003, monthly: 2.30, unit: "1 GB" },
 };
 
 /**
@@ -80,19 +88,36 @@ export async function fetchAzurePrices(params: {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
 
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: { Accept: "application/json" },
-    });
-    clearTimeout(timeout);
+    // Retry with exponential backoff
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+        clearTimeout(timeout);
 
-    if (!response.ok) {
-      throw new Error(`Azure Pricing API returned HTTP ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Azure Pricing API returned HTTP ${response.status}`);
+        }
+
+        const data = (await response.json()) as AzureRetailPricesResponse;
+        if (data.Items && data.Items.length > 0) {
+          return { items: data.Items, isFallback: false };
+        }
+        break; // No items found, don't retry
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (attempt < 2) {
+          // Exponential backoff: 500ms, 1000ms, 2000ms
+          await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt)));
+        }
+      }
     }
 
-    const data = (await response.json()) as AzureRetailPricesResponse;
-    if (data.Items && data.Items.length > 0) {
-      return { items: data.Items, isFallback: false };
+    if (lastError) {
+      throw lastError;
     }
   } catch {
     // Graceful offline fallback per spec §7
@@ -146,28 +171,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: "get_prices",
-        description:
-          "Query current Azure retail prices by service name, SKU name, and region. Returns hourly/monthly rates with unit of measure.",
+        name: "get_azure_prices",
+        description: "Fetch Azure Retail Prices for services, SKUs, and regions",
         inputSchema: {
           type: "object",
           properties: {
-            serviceName: {
-              type: "string",
-              description: "Official Azure service name, e.g. 'Virtual Machines', 'Azure App Service', 'Azure Cosmos DB', 'Storage'",
-            },
-            skuName: {
-              type: "string",
-              description: "Azure SKU identifier, e.g. 'P1v3', 'Standard_D4s_v5', 'Serverless'",
-            },
-            armRegionName: {
-              type: "string",
-              description: "Azure region code, e.g. 'eastus', 'westeurope', 'southeastasia'. Defaults to 'eastus'.",
-            },
-            currencyCode: {
-              type: "string",
-              description: "Three-letter ISO currency code, e.g. 'USD', 'EUR'. Defaults to 'USD'.",
-            },
+            serviceName: { type: "string", description: "Azure service name (e.g., 'App Service')" },
+            skuName: { type: "string", description: "SKU name (e.g., 'P1v3')" },
+            armRegionName: { type: "string", description: "Azure region (e.g., 'eastus')" },
+            currencyCode: { type: "string", description: "Currency code (e.g., 'USD')" },
           },
         },
       },
@@ -177,51 +189,36 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-
-  if (name !== "get_prices") {
-    throw new Error(`Unknown tool: ${name}`);
+  
+  if (name === "get_azure_prices") {
+    const params = args as {
+      serviceName?: string;
+      skuName?: string;
+      armRegionName?: string;
+      currencyCode?: string;
+    };
+    
+    const result = await fetchAzurePrices(params);
+    
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
   }
-
-  const result = await fetchAzurePrices({
-    serviceName: args?.["serviceName"] as string | undefined,
-    skuName: args?.["skuName"] as string | undefined,
-    armRegionName: args?.["armRegionName"] as string | undefined,
-    currencyCode: args?.["currencyCode"] as string | undefined,
-  });
-
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(
-          {
-            total: result.items.length,
-            isFallback: result.isFallback,
-            prices: result.items.map((item) => ({
-              productName: item.productName,
-              skuName: item.skuName,
-              retailPrice: item.retailPrice,
-              unitOfMeasure: item.unitOfMeasure,
-              region: item.armRegionName,
-              currency: item.currencyCode,
-            })),
-          },
-          null,
-          2
-        ),
-      },
-    ],
-  };
+  
+  throw new Error(`Unknown tool: ${name}`);
 });
 
 export async function startServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
+  console.error("Azure Pricing MCP Server running on stdio");
 }
 
 if (process.argv[1]?.endsWith("server.ts") || process.argv[1]?.endsWith("server.js")) {
-  startServer().catch((err) => {
-    console.error("Failed to start azure-pricing MCP server:", err);
-    process.exit(1);
-  });
+  startServer().catch(console.error);
 }
