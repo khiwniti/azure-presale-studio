@@ -3,7 +3,7 @@
 /**
  * Main Canvas Page for Architecture Diagram Editor.
  * Renders React Flow canvas with Azure nodes, layers panel, minimap, zoom controls,
- * and configuration panel for inline editing.
+ * configuration panel, chat panel, and agent timeline.
  * Spec §3 & §5.
  */
 
@@ -29,8 +29,11 @@ import { AzureNode } from "@/components/canvas/azure-node";
 import { GroupNode } from "@/components/canvas/group-node";
 import { LayersPanel } from "@/components/canvas/layers-panel";
 import { ConfigPanel } from "@/components/canvas/config-panel";
+import { ChatPanel, type ChatMessage } from "@/components/canvas/chat-panel";
+import { AgentTimeline } from "@/components/canvas/agent-timeline";
 import { useDiagramStore } from "@/lib/store/diagram-store";
 import type { DiagramJson } from "@/mcp/azure-diagram/validator";
+import type { TimelineEvent } from "@/lib/agent/types";
 
 const nodeTypes = {
   azureNode: AzureNode,
@@ -46,9 +49,16 @@ export default function CanvasPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
+  // Chat and agent state
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [agentStatus, setAgentStatus] = useState<"running" | "completed" | "failed">("completed");
+  const [runId, setRunId] = useState<string | null>(null);
+
   const diagramJson = useDiagramStore((s) => s.diagramJson);
   const setDiagramJson = useDiagramStore((s) => s.setDiagramJson);
   const saveCheckpoint = useDiagramStore((s) => s.saveCheckpoint);
+  const applySSEPatch = useDiagramStore((s) => s.applySSEPatch);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<AzureNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -102,12 +112,112 @@ export default function CanvasPage() {
     void loadCanvas();
   }, [canvasId, router, setDiagramJson, setNodes, setEdges]);
 
+  // SSE connection for real-time agent updates
+  useEffect(() => {
+    if (!canvasId) return;
+
+    const id = typeof canvasId === "string" ? canvasId : canvasId;
+    // For now, we'll use a placeholder runId - in production this would come from the current run
+    const currentRunId = id;
+    
+    setRunId(currentRunId);
+    
+    const eventSource = new EventSource(`/api/runs/${currentRunId}/stream`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === "replay") {
+          // Initial replay of existing state
+          setTimeline(data.timeline || []);
+          setAgentStatus(data.status || "completed");
+          if (data.diagram) {
+            setDiagramJson(data.diagram);
+            const { nodes: replayNodes, edges: replayEdges } = diagramJsonToReactFlow(data.diagram);
+            setNodes(replayNodes as Node<AzureNodeData>[]);
+            setEdges(replayEdges);
+          }
+        } else if (data.type === "timeline") {
+          // Live timeline update
+          setTimeline((prev) => [...prev, data.event]);
+        } else if (data.type === "patch") {
+          // SSE patch for diagram updates
+          applySSEPatch(data.patch);
+        } else if (data.type === "message") {
+          // Agent message
+          setMessages((prev) => [...prev, {
+            id: crypto.randomUUID(),
+            role: "agent",
+            content: data.content,
+            timestamp: new Date().toISOString(),
+          }]);
+        } else if (data.status) {
+          // Overall status update
+          setAgentStatus(data.status);
+          if (data.status === "completed" || data.status === "failed") {
+            eventSource.close();
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse SSE event:", err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("SSE connection error:", err);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [canvasId, setDiagramJson, setNodes, setEdges, applySSEPatch]);
+
   const onConnect: OnConnect = useCallback(
     (connection) => {
       setEdges((eds) => addEdge(connection, eds));
     },
     [setEdges]
   );
+
+  const handleSendMessage = useCallback(async (content: string) => {
+    // Add user message to chat
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Send to agent (this would create a new run or append to existing)
+    // For now, this is a placeholder - the actual API endpoint needs to be implemented
+    try {
+      const id = typeof canvasId === "string" ? canvasId : await (canvasId as Promise<string>);
+      const res = await fetch("/api/runs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ canvasId: id, prompt: content, intent: "edit" }),
+      });
+
+      if (!res.ok) throw new Error("Failed to send message");
+
+      const data = await res.json();
+      if (data.runId) {
+        setRunId(data.runId);
+        setAgentStatus("running");
+      }
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      setMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        role: "agent",
+        content: "Sorry, I couldn't process your message. Please try again.",
+        timestamp: new Date().toISOString(),
+      }]);
+    }
+  }, [canvasId]);
 
   const handleSave = useCallback(async () => {
     if (!diagramJson) return;
@@ -167,6 +277,18 @@ export default function CanvasPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Agent Status Badge */}
+          <span
+            className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+              agentStatus === "running"
+                ? "bg-cyan-500/20 text-cyan-300"
+                : agentStatus === "completed"
+                ? "bg-green-500/20 text-green-300"
+                : "bg-red-500/20 text-red-300"
+            }`}
+          >
+            Agent {agentStatus}
+          </span>
           <button
             type="button"
             onClick={handleSave}
@@ -213,8 +335,25 @@ export default function CanvasPage() {
           <LayersPanel nodes={nodes} edges={edges} />
         </div>
 
-        {/* Config Panel (Right Sidebar) */}
-        <ConfigPanel selectedNode={selectedNode} />
+        {/* Right Sidebar: Config Panel + Agent Timeline + Chat Panel */}
+        <div className="flex flex-col h-full w-80 border-l border-slate-800">
+          {/* Config Panel */}
+          <ConfigPanel selectedNode={selectedNode} />
+          
+          {/* Agent Timeline */}
+          <div className="h-64">
+            <AgentTimeline timeline={timeline} overallStatus={agentStatus} />
+          </div>
+
+          {/* Chat Panel */}
+          <div className="h-64">
+            <ChatPanel 
+              messages={messages} 
+              onSendMessage={handleSendMessage}
+              disabled={agentStatus === "running"}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
