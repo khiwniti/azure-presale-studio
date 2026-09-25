@@ -8,7 +8,7 @@
 See: .planning/PROJECT.md (updated 2026-09-24)
 
 **Core value:** A requirements prompt produces a valid Azure architecture diagram (official ARM icons, real service types) without user correction in the golden path.  
-**Current focus:** Phase 9 — Editor Node
+**Current focus:** Phase 10 — Report Wizard
 
 ---
 
@@ -24,8 +24,8 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 | 6 | Diagram State Store | Complete |
 | 7 | Inline Editing | Complete |
 | 8 | Chat Panel + Agent State Visualization | Complete |
-| 9 | Editor Node | In Progress |
-| 10 | Report Wizard | Not Started |
+| 9 | Editor Node | Complete |
+| 10 | Report Wizard | In Progress |
 | 11 | SVG/PNG Export | Not Started |
 | 12 | IaC Export | Not Started |
 | 13 | Document Exports (DOCX + XLSX + Zip) | Not Started |
@@ -37,7 +37,7 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 ## Active Work
 
 Phase 6 completed and verified (Zustand + immer diagram state store with SSE patch application, undo/redo stack, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 7 (Inline Editing: node label, SKU dropdown, zone-redundancy toggle, ConfigPanel for ARM-specific fields).
-Phase 8 completed and verified (Chat Panel with message history, SSE streaming, Agent Timeline with 5 LangGraph nodes, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 9 (Editor Node: custom node for annotations with notes, tags, warnings).
+Phase 9 completed and verified (Editor Node for annotations with notes, tags, warnings, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 10 (Report Wizard: multi-step wizard for architecture summary, pricing, security, exports).
 ---
 
 ## Blockers
