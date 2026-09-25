@@ -8,7 +8,7 @@
 See: .planning/PROJECT.md (updated 2026-09-24)
 
 **Core value:** A requirements prompt produces a valid Azure architecture diagram (official ARM icons, real service types) without user correction in the golden path.  
-**Current focus:** Phase 13 — Document Exports (DOCX + XLSX + Zip)
+**Current focus:** Phase 14 — Error Handling + Degradation UX
 
 ---
 
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 | 10 | Report Wizard | Complete |
 | 11 | SVG/PNG Export | Complete |
 | 12 | IaC Export | Complete |
-| 13 | Document Exports (DOCX + XLSX + Zip) | In Progress |
-| 14 | Error Handling + Degradation UX | Not Started |
+| 13 | Document Exports (DOCX + XLSX + Zip) | Complete |
+| 14 | Error Handling + Degradation UX | In Progress |
 | 15 | Testing Suite | Not Started |
 
 ---
@@ -37,7 +37,7 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 ## Active Work
 
 Phase 6 completed and verified (Zustand + immer diagram state store with SSE patch application, undo/redo stack, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 7 (Inline Editing: node label, SKU dropdown, zone-redundancy toggle, ConfigPanel for ARM-specific fields).
-Phase 12 completed and verified (IaC Export: Bicep and Terraform emitters from diagram JSON, 45 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 13 (Document Exports: DOCX architecture document, XLSX pricing sheet, Zip bundle).
+Phase 13 completed and verified (Document Exports: XLSX pricing sheet, ZIP bundle with all deliverables, 45 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 14 (Error Handling + Degradation UX: React error boundaries, degraded mode for MCP failures, retry logic, toast notifications).
 ---
 
 ## Blockers
