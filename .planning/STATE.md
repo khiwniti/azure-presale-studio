@@ -8,7 +8,7 @@
 See: .planning/PROJECT.md (updated 2026-09-24)
 
 **Core value:** A requirements prompt produces a valid Azure architecture diagram (official ARM icons, real service types) without user correction in the golden path.  
-**Current focus:** Phase 8 — Chat Panel + Agent State Visualization
+**Current focus:** Phase 9 — Editor Node
 
 ---
 
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 | 5 | React Flow Canvas + Diagram Rendering | Complete |
 | 6 | Diagram State Store | Complete |
 | 7 | Inline Editing | Complete |
-| 8 | Chat Panel + Agent State Visualization | In Progress |
-| 9 | Editor Node | Not Started |
+| 8 | Chat Panel + Agent State Visualization | Complete |
+| 9 | Editor Node | In Progress |
 | 10 | Report Wizard | Not Started |
 | 11 | SVG/PNG Export | Not Started |
 | 12 | IaC Export | Not Started |
@@ -37,7 +37,7 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 ## Active Work
 
 Phase 6 completed and verified (Zustand + immer diagram state store with SSE patch application, undo/redo stack, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 7 (Inline Editing: node label, SKU dropdown, zone-redundancy toggle, ConfigPanel for ARM-specific fields).
-Phase 7 completed and verified (Inline editing: node label contenteditable, SKU dropdown, ZRS toggle, ConfigPanel with ARM-specific fields, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 8 (Chat Panel + Agent State Visualization: message history, SSE streaming, timeline).
+Phase 8 completed and verified (Chat Panel with message history, SSE streaming, Agent Timeline with 5 LangGraph nodes, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 9 (Editor Node: custom node for annotations with notes, tags, warnings).
 ---
 
 ## Blockers
