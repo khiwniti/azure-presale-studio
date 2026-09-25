@@ -6,8 +6,8 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { fetchAzurePrices } from "@/mcp/azure-pricing/server";
-import { lookupAzureService, getServiceIcon, calculateTierLayout, validateDiagram } from "@/mcp/azure-diagram/registry";
-import { validateDiagram as validateDiagramFn } from "@/mcp/azure-diagram/validator";
+import { lookupAzureService, getServiceIcon, calculateTierLayout } from "@/mcp/azure-diagram/registry";
+import { validateDiagram } from "@/mcp/azure-diagram/validator";
 
 describe("Azure Pricing MCP Integration", () => {
   it("should fetch retail prices for App Service P1v3", async () => {
@@ -19,8 +19,11 @@ describe("Azure Pricing MCP Integration", () => {
     
     expect(result.items).toBeDefined();
     expect(result.items.length).toBeGreaterThan(0);
-    expect(result.items[0].serviceName).toContain("App");
-    expect(result.items[0].skuName).toContain("P1v3");
+    const firstItem = result.items[0];
+    if (firstItem) {
+      expect(firstItem.serviceName).toContain("App");
+      expect(firstItem.skuName).toContain("P1v3");
+    }
   });
 
   it("should fallback gracefully when API unavailable", async () => {
@@ -33,7 +36,10 @@ describe("Azure Pricing MCP Integration", () => {
     
     expect(result.isFallback).toBe(true);
     expect(result.items.length).toBe(1);
-    expect(result.items[0].skuName).toBe("P1v3");
+    const fallbackItem = result.items[0];
+    if (fallbackItem) {
+      expect(fallbackItem.skuName).toBe("P1v3");
+    }
   });
 
   it("should handle different regions", async () => {
@@ -44,7 +50,9 @@ describe("Azure Pricing MCP Integration", () => {
     });
     
     expect(result.items.length).toBeGreaterThan(0);
-    expect(result.items[0].armRegionName).toBe("westeurope");
+    if (result.items[0]) {
+      expect(result.items[0].armRegionName).toBe("westeurope");
+    }
   });
 });
 
@@ -68,9 +76,11 @@ describe("Azure Diagram MCP Integration", () => {
     const metadata = lookupAzureService("Microsoft.Web/sites");
     
     expect(metadata).not.toBeNull();
-    expect(metadata?.displayName).toBe("Azure App Service");
-    expect(metadata?.category).toBe("compute");
-    expect(metadata?.tier).toBe("app");
+    if (metadata) {
+      expect(metadata.displayName).toBe("Azure App Service");
+      expect(metadata.category).toBe("compute");
+      expect(metadata.tier).toBe("app");
+    }
   });
 
   it("should return null for unknown ARM type", () => {
@@ -191,6 +201,6 @@ describe("Diagram Validation", () => {
 
     const result = validateDiagram(diagram);
     expect(result.valid).toBe(false);
-    expect(result.errors.some(e => e.includes("nonexistent"))).toBe(true);
+    expect(result.errors.some(e => e.message.includes("nonexistent"))).toBe(true);
   });
 });

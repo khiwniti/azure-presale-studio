@@ -45,7 +45,8 @@ test.describe("Canvas Page E2E", () => {
     await expect(page.locator(".react-flow")).toBeVisible();
     
     // Check for nodes
-    await expect(page.locator(".azure-node")).toHaveCountGreaterThan(0);
+    const nodeCount = await page.locator(".azure-node").count();
+    expect(nodeCount).toBeGreaterThan(0);
   });
 
   test("should allow inline editing of node label", async () => {
