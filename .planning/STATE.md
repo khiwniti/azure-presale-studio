@@ -8,7 +8,7 @@
 See: .planning/PROJECT.md (updated 2026-09-24)
 
 **Core value:** A requirements prompt produces a valid Azure architecture diagram (official ARM icons, real service types) without user correction in the golden path.  
-**Current focus:** Phase 11 — SVG/PNG Export
+**Current focus:** Phase 12 — IaC Export
 
 ---
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 | 8 | Chat Panel + Agent State Visualization | Complete |
 | 9 | Editor Node | Complete |
 | 10 | Report Wizard | Complete |
-| 11 | SVG/PNG Export | In Progress |
-| 12 | IaC Export | Not Started |
+| 11 | SVG/PNG Export | Complete |
+| 12 | IaC Export | In Progress |
 | 13 | Document Exports (DOCX + XLSX + Zip) | Not Started |
 | 14 | Error Handling + Degradation UX | Not Started |
 | 15 | Testing Suite | Not Started |
@@ -37,7 +37,7 @@ See: .planning/PROJECT.md (updated 2026-09-24)
 ## Active Work
 
 Phase 6 completed and verified (Zustand + immer diagram state store with SSE patch application, undo/redo stack, 60 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 7 (Inline Editing: node label, SKU dropdown, zone-redundancy toggle, ConfigPanel for ARM-specific fields).
-Phase 10 completed and verified (Report Wizard with 4-step workflow for architecture summary, pricing, security, exports; 45 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 11 (SVG/PNG Export: server-side rendering via @resvg/resvg).
+Phase 11 completed and verified (SVG/PNG Export via @resvg/resvg with server-side rendering, 45 tests passing, 0 impeccable defects, production build clean). Advancing to Phase 12 (IaC Export: Bicep and Terraform emitters from diagram JSON).
 ---
 
 ## Blockers
