@@ -3,7 +3,7 @@
 /**
  * Main Canvas Page for Architecture Diagram Editor.
  * Renders React Flow canvas with Azure nodes, layers panel, minimap, zoom controls,
- * configuration panel, chat panel, and agent timeline.
+ * configuration panel, chat panel, agent timeline, and report wizard.
  * Spec §3 & §5.
  */
 
@@ -32,6 +32,7 @@ import { LayersPanel } from "@/components/canvas/layers-panel";
 import { ConfigPanel } from "@/components/canvas/config-panel";
 import { ChatPanel, type ChatMessage } from "@/components/canvas/chat-panel";
 import { AgentTimeline } from "@/components/canvas/agent-timeline";
+import { ReportWizard } from "@/components/canvas/report-wizard";
 import { useDiagramStore } from "@/lib/store/diagram-store";
 import type { DiagramJson } from "@/mcp/azure-diagram/validator";
 import type { TimelineEvent } from "@/lib/agent/types";
@@ -50,6 +51,7 @@ export default function CanvasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [showReportWizard, setShowReportWizard] = useState(false);
 
   // Chat and agent state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -102,7 +104,7 @@ export default function CanvasPage() {
 
         setDiagramJson(parsed);
         const { nodes: initialNodes, edges: initialEdges } = diagramJsonToReactFlow(parsed);
-        setNodes(initialNodes as Node<AzureNodeData>[]);
+        setNodes(initialNodes as Node<AzureNodeData | import("@/components/canvas/diagram-converter").EditorNodeData>[]);
         setEdges(initialEdges);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load canvas");
@@ -137,7 +139,7 @@ export default function CanvasPage() {
           if (data.diagram) {
             setDiagramJson(data.diagram);
             const { nodes: replayNodes, edges: replayEdges } = diagramJsonToReactFlow(data.diagram);
-            setNodes(replayNodes as Node<AzureNodeData>[]);
+            setNodes(replayNodes as Node<AzureNodeData | import("@/components/canvas/diagram-converter").EditorNodeData>[]);
             setEdges(replayEdges);
           }
         } else if (data.type === "timeline") {
@@ -327,6 +329,13 @@ export default function CanvasPage() {
           >
             Save
           </button>
+          <button
+            type="button"
+            onClick={() => setShowReportWizard(true)}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors shadow-sm"
+          >
+            Generate Report
+          </button>
         </div>
       </div>
 
@@ -386,6 +395,17 @@ export default function CanvasPage() {
           </div>
         </div>
       </div>
+
+      {showReportWizard && diagramJson && (
+        <ReportWizard
+          diagramJson={diagramJson}
+          onClose={() => setShowReportWizard(false)}
+          onGenerateReport={(format) => {
+            // Handle report generation
+            console.log("Generate report:", format);
+          }}
+        />
+      )}
     </div>
   );
 }
