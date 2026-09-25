@@ -2,8 +2,8 @@
 
 /**
  * Main Canvas Page for Architecture Diagram Editor.
- * Renders React Flow canvas with Azure nodes, layers panel, minimap, and zoom controls.
- * Uses Zustand store for centralized state management.
+ * Renders React Flow canvas with Azure nodes, layers panel, minimap, zoom controls,
+ * and configuration panel for inline editing.
  * Spec §3 & §5.
  */
 
@@ -17,6 +17,7 @@ import {
   ReactFlow,
   type Node,
   type Edge,
+  type NodeChange,
   useNodesState,
   useEdgesState,
   addEdge,
@@ -27,6 +28,7 @@ import { diagramJsonToReactFlow, reactFlowToDiagramJson, type AzureNodeData } fr
 import { AzureNode } from "@/components/canvas/azure-node";
 import { GroupNode } from "@/components/canvas/group-node";
 import { LayersPanel } from "@/components/canvas/layers-panel";
+import { ConfigPanel } from "@/components/canvas/config-panel";
 import { useDiagramStore } from "@/lib/store/diagram-store";
 import type { DiagramJson } from "@/mcp/azure-diagram/validator";
 
@@ -42,13 +44,32 @@ export default function CanvasPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const diagramJson = useDiagramStore((s) => s.diagramJson);
   const setDiagramJson = useDiagramStore((s) => s.setDiagramJson);
   const saveCheckpoint = useDiagramStore((s) => s.saveCheckpoint);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AzureNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  // Handle node selection
+  const handleNodesChange = useCallback(
+    (changes: NodeChange<Node<AzureNodeData>>[]) => {
+      onNodesChange(changes);
+      // Track selection changes
+      for (const change of changes) {
+        if (change.type === "select" && change.selected) {
+          setSelectedNodeId(change.id);
+        } else if (change.type === "select" && !change.selected) {
+          if (selectedNodeId === change.id) {
+            setSelectedNodeId(null);
+          }
+        }
+      }
+    },
+    [onNodesChange, selectedNodeId]
+  );
 
   // Load initial diagram from database
   useEffect(() => {
@@ -69,7 +90,7 @@ export default function CanvasPage() {
 
         setDiagramJson(parsed);
         const { nodes: initialNodes, edges: initialEdges } = diagramJsonToReactFlow(parsed);
-        setNodes(initialNodes);
+        setNodes(initialNodes as Node<AzureNodeData>[]);
         setEdges(initialEdges);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load canvas");
@@ -108,6 +129,8 @@ export default function CanvasPage() {
     }
   }, [canvasId, diagramJson, nodes, edges, setDiagramJson, saveCheckpoint]);
 
+  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -135,7 +158,7 @@ export default function CanvasPage() {
             className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           </button>
           <h1 className="text-sm font-semibold text-slate-100 truncate max-w-md">
@@ -155,37 +178,43 @@ export default function CanvasPage() {
       </div>
 
       {/* Main Canvas Area */}
-      <div className="flex-1 relative">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          minZoom={0.2}
-          maxZoom={2}
-          defaultEdgeOptions={{
-            type: "smoothstep",
-            animated: false,
-            style: { stroke: "#38bdf8", strokeWidth: 1.5 },
-          }}
-        >
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#334155" />
-          <Controls className="!bg-slate-900 !border !border-slate-700 !shadow-xl" />
-          <MiniMap
-            className="!bg-slate-900 !border !border-slate-700"
-            nodeColor={(node) => {
-              const data = node.data as AzureNodeData;
-              return data.service ? "#0078D4" : "#334155";
+      <div className="flex-1 relative flex">
+        {/* Canvas */}
+        <div className="flex-1 relative">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={handleNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            fitView
+            minZoom={0.2}
+            maxZoom={2}
+            defaultEdgeOptions={{
+              type: "smoothstep",
+              animated: false,
+              style: { stroke: "#38bdf8", strokeWidth: 1.5 },
             }}
-            maskColor="rgba(15, 23, 42, 0.8)"
-          />
-        </ReactFlow>
+          >
+            <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#334155" />
+            <Controls className="!bg-slate-900 !border !border-slate-700 !shadow-xl" />
+            <MiniMap
+              className="!bg-slate-900 !border !border-slate-700"
+              nodeColor={(node) => {
+                const data = node.data as AzureNodeData;
+                return data.service ? "#0078D4" : "#334155";
+              }}
+              maskColor="rgba(15, 23, 42, 0.8)"
+            />
+          </ReactFlow>
 
-        {/* Layers Panel */}
-        <LayersPanel nodes={nodes} edges={edges} />
+          {/* Layers Panel */}
+          <LayersPanel nodes={nodes} edges={edges} />
+        </div>
+
+        {/* Config Panel (Right Sidebar) */}
+        <ConfigPanel selectedNode={selectedNode} />
       </div>
     </div>
   );
