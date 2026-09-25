@@ -32,6 +32,8 @@ interface DiagramState {
   canUndo: () => boolean;
   canRedo: () => boolean;
   saveCheckpoint: () => void;
+  updateNodeData: (nodeId: string, updates: { label?: string; sku?: string; zoneRedundant?: boolean; config?: Record<string, unknown> }) => void;
+  updateNodeConfig: (nodeId: string, config: Record<string, unknown>) => void;
 }
 
 export const useDiagramStore = create<DiagramState>()(
@@ -117,7 +119,8 @@ export const useDiagramStore = create<DiagramState>()(
       set((state) => {
         if (state.historyIndex > 0) {
           state.historyIndex -= 1;
-          state.diagramJson = state.history[state.historyIndex];
+          const prev = state.history[state.historyIndex];
+          if (prev) state.diagramJson = prev;
         }
       });
     },
@@ -126,7 +129,8 @@ export const useDiagramStore = create<DiagramState>()(
       set((state) => {
         if (state.historyIndex < state.history.length - 1) {
           state.historyIndex += 1;
-          state.diagramJson = state.history[state.historyIndex];
+          const next = state.history[state.historyIndex];
+          if (next) state.diagramJson = next;
         }
       });
     },
@@ -146,6 +150,56 @@ export const useDiagramStore = create<DiagramState>()(
         if (state.history.length > 50) {
           state.history.shift();
           state.historyIndex -= 1;
+        }
+      });
+    },
+
+    updateNodeData: (nodeId, updates) => {
+      set((state) => {
+        if (!state.diagramJson) return;
+        
+        // Update in React Flow nodes
+        const nodeIndex = state.nodes.findIndex((n) => n.id === nodeId);
+        if (nodeIndex !== -1) {
+          const node = state.nodes[nodeIndex]!;
+          const nodeData = node.data as Record<string, unknown>;
+          
+          if (updates.label !== undefined) nodeData.label = updates.label;
+          if (updates.sku !== undefined) nodeData.sku = updates.sku;
+          if (updates.zoneRedundant !== undefined) nodeData.zoneRedundant = updates.zoneRedundant;
+          if (updates.config !== undefined) nodeData.config = updates.config;
+          
+          state.nodes[nodeIndex] = { ...node, data: nodeData };
+        }
+        
+        // Update in canonical diagram JSON
+        const diagramNode = state.diagramJson.nodes.find((n) => n.id === nodeId);
+        if (diagramNode) {
+          if (updates.label !== undefined) diagramNode.label = updates.label;
+          if (updates.config !== undefined) {
+            diagramNode.config = { ...diagramNode.config, ...updates.config };
+          }
+        }
+      });
+    },
+
+    updateNodeConfig: (nodeId, config) => {
+      set((state) => {
+        if (!state.diagramJson) return;
+        
+        // Update in React Flow nodes
+        const nodeIndex = state.nodes.findIndex((n) => n.id === nodeId);
+        if (nodeIndex !== -1) {
+          const node = state.nodes[nodeIndex]!;
+          const nodeData = node.data as Record<string, unknown>;
+          nodeData.config = config;
+          state.nodes[nodeIndex] = { ...node, data: nodeData };
+        }
+        
+        // Update in canonical diagram JSON
+        const diagramNode = state.diagramJson.nodes.find((n) => n.id === nodeId);
+        if (diagramNode) {
+          diagramNode.config = config;
         }
       });
     },

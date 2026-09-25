@@ -7,6 +7,7 @@ export default defineConfig({
     environment: "node",
     include: ["**/__tests__/**/*.test.ts", "**/*.test.ts"],
     exclude: ["node_modules", ".next", "playwright-report"],
+    setupFiles: ["./vitest.setup.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],

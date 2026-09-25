@@ -31,6 +31,13 @@ export interface GroupNodeData {
   [key: string]: unknown;
 }
 
+export interface EditorNodeData {
+  id: string;
+  annotations: Array<{ id: string; type: "note" | "tag" | "warning"; text: string }>;
+  onAnnotationChange?: (newAnnotations: Array<{ id: string; type: "note" | "tag" | "warning"; text: string }>) => void;
+  [key: string]: unknown;
+}
+
 export interface ConvertedReactFlowGraph {
   nodes: Node[];
   edges: Edge[];
@@ -87,7 +94,23 @@ export function diagramJsonToReactFlow(diagram: DiagramJson): ConvertedReactFlow
     });
   }
 
-  // 3. Edges
+  // 3. Editor nodes (annotations)
+  for (const node of diagram.nodes) {
+    if (node.service === "editor") {
+      nodes.push({
+        id: node.id,
+        type: "editorNode",
+        parentId: node.parent,
+        position: { x: node.position.x, y: node.position.y },
+        data: {
+          id: node.id,
+          annotations: node.annotations ?? [],
+        } as EditorNodeData,
+      });
+    }
+  }
+
+  // 4. Edges
   for (const edge of diagram.edges) {
     edges.push({
       id: edge.id,
@@ -136,6 +159,17 @@ export function reactFlowToDiagramJson(
         id: node.id,
         kind: data.kind,
         label: data.label,
+      });
+    } else if (node.type === "editorNode") {
+      const data = node.data as EditorNodeData;
+      updatedNodes.push({
+        id: node.id,
+        service: "editor",
+        label: "Annotation",
+        parent: node.parentId,
+        position: { x: Math.round(node.position.x), y: Math.round(node.position.y) },
+        config: {},
+        annotations: data.annotations ?? [],
       });
     } else {
       const data = node.data as AzureNodeData;
