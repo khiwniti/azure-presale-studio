@@ -27,6 +27,7 @@ import "@xyflow/react/dist/style.css";
 import { diagramJsonToReactFlow, reactFlowToDiagramJson, type AzureNodeData } from "@/components/canvas/diagram-converter";
 import { AzureNode } from "@/components/canvas/azure-node";
 import { GroupNode } from "@/components/canvas/group-node";
+import { EditorNode } from "@/components/canvas/editor-node";
 import { LayersPanel } from "@/components/canvas/layers-panel";
 import { ConfigPanel } from "@/components/canvas/config-panel";
 import { ChatPanel, type ChatMessage } from "@/components/canvas/chat-panel";
@@ -38,6 +39,7 @@ import type { TimelineEvent } from "@/lib/agent/types";
 const nodeTypes = {
   azureNode: AzureNode,
   azureGroup: GroupNode,
+  editorNode: EditorNode,
 };
 
 export default function CanvasPage() {
@@ -60,12 +62,12 @@ export default function CanvasPage() {
   const saveCheckpoint = useDiagramStore((s) => s.saveCheckpoint);
   const applySSEPatch = useDiagramStore((s) => s.applySSEPatch);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AzureNodeData>>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AzureNodeData | import("@/components/canvas/diagram-converter").EditorNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   // Handle node selection
   const handleNodesChange = useCallback(
-    (changes: NodeChange<Node<AzureNodeData>>[]) => {
+    (changes: NodeChange<Node<AzureNodeData | import("@/components/canvas/diagram-converter").EditorNodeData>>[]) => {
       onNodesChange(changes);
       // Track selection changes
       for (const change of changes) {
@@ -181,6 +183,28 @@ export default function CanvasPage() {
     [setEdges]
   );
 
+  const handleAddNote = useCallback(() => {
+    const newEditorNode: Node<import("@/components/canvas/diagram-converter").EditorNodeData> = {
+      id: `editor_${Date.now()}`,
+      type: "editorNode",
+      position: { x: 100 + nodes.length * 50, y: 100 + nodes.length * 50 },
+      data: {
+        id: `editor_${Date.now()}`,
+        annotations: [],
+        onAnnotationChange: (newAnnotations) => {
+          setNodes((nds) =>
+            nds.map((n) =>
+              n.id === newEditorNode.id
+                ? { ...n, data: { ...n.data, annotations: newAnnotations } }
+                : n
+            )
+          );
+        },
+      },
+    };
+    setNodes((nds) => [...nds, newEditorNode]);
+  }, [nodes, setNodes]);
+
   const handleSendMessage = useCallback(async (content: string) => {
     // Add user message to chat
     const userMessage: ChatMessage = {
@@ -239,7 +263,7 @@ export default function CanvasPage() {
     }
   }, [canvasId, diagramJson, nodes, edges, setDiagramJson, saveCheckpoint]);
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+  const selectedNode = (nodes.find((n) => n.id === selectedNodeId) as import("@xyflow/react").Node<import("@/components/canvas/diagram-converter").AzureNodeData> | null) ?? null;
 
   if (loading) {
     return (
@@ -289,6 +313,13 @@ export default function CanvasPage() {
           >
             Agent {agentStatus}
           </span>
+          <button
+            type="button"
+            onClick={handleAddNote}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-amber-600 hover:bg-amber-500 transition-colors shadow-sm"
+          >
+            Add Note
+          </button>
           <button
             type="button"
             onClick={handleSave}
